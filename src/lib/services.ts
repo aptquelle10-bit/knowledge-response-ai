@@ -232,18 +232,17 @@ export async function runProcessingPipeline(
 ): Promise<void> {
   const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-  const job = await fetchJob(packageId);
-  const currentLog = job?.log || [];
-
   await updatePackage(packageId, { status: 'processing' });
+
+  const freshLog = [makeLogEntry('normalization', `Starting normalization of ${sources.length} source${sources.length !== 1 ? 's' : ''}...`)];
   await updateJob(packageId, {
     stage: 'normalization',
     progress: 0,
     status: 'running',
-    log: [...currentLog, makeLogEntry('normalization', `Starting normalization of ${sources.length} source${sources.length !== 1 ? 's' : ''}...`)],
+    log: freshLog,
   });
 
-  if (onProgress) onProgress('normalization', 0, currentLog);
+  if (onProgress) onProgress('normalization', 0, freshLog);
 
   // Stage 1: Normalization
   for (let i = 0; i < sources.length; i++) {
@@ -263,14 +262,14 @@ export async function runProcessingPipeline(
 
     const progress = Math.round(((i + 1) / sources.length) * 20);
     const logEntry = makeLogEntry('normalization', `Normalized ${source.filename} → ${normalizedName} [${getFileTypeLabel(source.file_type)}]`, 'success');
-    const newLog = [...currentLog, logEntry];
+    const newLog = [...freshLog, logEntry];
     await updateJob(packageId, { stage: 'normalization', progress, log: newLog });
     if (onProgress) onProgress('normalization', progress, newLog);
   }
 
   // Stage 2: Knowledge Intelligence (Extraction)
   await delay(500);
-  const afterNormLog = [...currentLog, makeLogEntry('extraction', 'AI Gateway Hub: gateway.chat() — extracting facts, entities, and relationships...', 'info')];
+  const afterNormLog = [...freshLog, makeLogEntry('extraction', 'AI Gateway Hub: gateway.chat() — extracting facts, entities, and relationships...', 'info')];
   await updateJob(packageId, { stage: 'extraction', progress: 30, log: afterNormLog });
   if (onProgress) onProgress('extraction', 30, afterNormLog);
 
