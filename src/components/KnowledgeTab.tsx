@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import {
   FileText, Brain, Tag, MessageSquare, ShieldAlert, BookMarked, Target,
-  Info, Database, Search, ChevronRight, type LucideIcon,
+  Info, Database, Search, ChevronRight, FolderOpen, RefreshCw, CheckCircle2,
+  AlertCircle, Globe, type LucideIcon,
 } from 'lucide-react';
 import type { KnowledgePackage, KnowledgeAsset, AssetType } from '@/lib/types';
 import { upsertAsset } from '@/lib/services';
 import { saveAs } from '@/lib/download';
+import { prepareAssetsForExport, exportToDirectoryPicker, exportToGatewayApi } from '@/lib/export-target';
 
 interface KnowledgeTabProps {
   packageId: string;
@@ -43,9 +45,23 @@ export function KnowledgeTab({ packageId, pkg, assets, onAssetsChanged }: Knowle
   const [editContent, setEditContent] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Sync to Website / Folder State
+  const [targetProject, setTargetProject] = useState(pkg.slug || 'apzurquelle');
+  const [gatewayUrl, setGatewayUrl] = useState('http://localhost:5174');
+  const [syncStatus, setSyncStatus] = useState<{ state: 'idle' | 'loading' | 'success' | 'error'; message: string }>({
+    state: 'idle',
+    message: '',
+  });
+
   const assetMap = new Map(assets.map((a) => [a.asset_type, a]));
   const selectedAsset = selectedType ? assetMap.get(selectedType) : null;
   const selectedMeta = ASSET_METAS.find((m) => m.type === selectedType);
+
+  const getExportList = () => {
+    const filenameMap: Record<AssetType, string> = {} as any;
+    ASSET_METAS.forEach((m) => { filenameMap[m.type] = m.filename; });
+    return prepareAssetsForExport(assets, filenameMap);
+  };
 
   const handleStartEdit = () => {
     if (selectedAsset && selectedMeta?.editable) {
@@ -88,6 +104,44 @@ export function KnowledgeTab({ packageId, pkg, assets, onAssetsChanged }: Knowle
     });
   };
 
+  const handleSaveToProjectFolder = async () => {
+    try {
+      setSyncStatus({ state: 'loading', message: 'Selecting project folder...' });
+      const exportList = getExportList();
+      const res = await exportToDirectoryPicker(exportList);
+      setSyncStatus({
+        state: 'success',
+        message: `Saved ${res.written.length} files into folder "${res.dirName}"!`,
+      });
+      setTimeout(() => setSyncStatus({ state: 'idle', message: '' }), 5000);
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        setSyncStatus({ state: 'error', message: err.message });
+      } else {
+        setSyncStatus({ state: 'idle', message: '' });
+      }
+    }
+  };
+
+  const handleSyncToWebsiteGateway = async () => {
+    try {
+      setSyncStatus({ state: 'loading', message: `Syncing to projects/${targetProject}/ai_knowledge...` });
+      const exportList = getExportList();
+      const res = await exportToGatewayApi({
+        gatewayUrl,
+        projectName: targetProject,
+        assetExports: exportList,
+      });
+      setSyncStatus({
+        state: 'success',
+        message: res.message,
+      });
+      setTimeout(() => setSyncStatus({ state: 'idle', message: '' }), 5000);
+    } catch (err: any) {
+      setSyncStatus({ state: 'error', message: err.message });
+    }
+  };
+
   if (assets.length === 0) {
     return (
       <div className="card p-12 text-center animate-fade-in">
@@ -105,17 +159,74 @@ export function KnowledgeTab({ packageId, pkg, assets, onAssetsChanged }: Knowle
   return (
     <div className="flex gap-5 animate-fade-in">
       {/* Asset sidebar */}
-      <div className="w-64 shrink-0 space-y-1">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            Knowledge Files
-          </span>
-          <button
-            onClick={handleDownloadAll}
-            className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium"
-          >
-            Download All
-          </button>
+      <div className="w-64 shrink-0 space-y-3">
+        {/* Project Folder Export / Sync Box */}
+        <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2.5">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
+            <FolderOpen className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Target Project Folder</span>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] text-slate-400 uppercase font-mono">Project Name</label>
+            <input
+              type="text"
+              value={targetProject}
+              onChange={(e) => setTargetProject(e.target.value)}
+              placeholder="e.g. apzurquelle"
+              className="w-full px-2 py-1 bg-slate-800/80 border border-slate-700 rounded text-xs text-white placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div className="space-y-1.5 pt-1">
+            <button
+              onClick={handleSyncToWebsiteGateway}
+              disabled={syncStatus.state === 'loading'}
+              className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium transition shadow-sm disabled:opacity-50"
+              title="Syncs files directly to projects/<name>/ai_knowledge via website dev server"
+            >
+              <RefreshCw className={`w-3 h-3 ${syncStatus.state === 'loading' ? 'animate-spin' : ''}`} />
+              Sync to Website
+            </button>
+
+            <button
+              onClick={handleSaveToProjectFolder}
+              disabled={syncStatus.state === 'loading'}
+              className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium transition"
+              title="Select folder on your computer to save all knowledge files"
+            >
+              <FolderOpen className="w-3 h-3 text-emerald-400" />
+              Pick Local Folder
+            </button>
+          </div>
+
+          {syncStatus.message && (
+            <div className={`p-2 rounded text-[11px] flex items-start gap-1.5 ${
+              syncStatus.state === 'success'
+                ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/50'
+                : syncStatus.state === 'error'
+                ? 'bg-rose-950/60 text-rose-300 border border-rose-800/50'
+                : 'bg-cyan-950/60 text-cyan-300 border border-cyan-800/50'
+            }`}>
+              {syncStatus.state === 'success' && <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-400 mt-0.5" />}
+              {syncStatus.state === 'error' && <AlertCircle className="w-3.5 h-3.5 shrink-0 text-rose-400 mt-0.5" />}
+              {syncStatus.state === 'loading' && <RefreshCw className="w-3.5 h-3.5 shrink-0 text-cyan-400 animate-spin mt-0.5" />}
+              <span className="leading-tight break-all">{syncStatus.message}</span>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Knowledge Files
+            </span>
+            <button
+              onClick={handleDownloadAll}
+              className="text-[10px] text-cyan-400 hover:text-cyan-300 font-medium"
+            >
+              Download All
+            </button>
+          </div>
         </div>
         {ASSET_METAS.map((meta) => {
           const asset = assetMap.get(meta.type);
