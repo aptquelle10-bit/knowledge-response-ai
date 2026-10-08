@@ -45,7 +45,7 @@ export function ChatWidget({ pkg, assets, onMessagesChanged }: ChatWidgetProps) 
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
-    const userMessage = input.trim();
+    const userMessage = input.trim().slice(0, MAX_MESSAGE_LENGTH);
     setInput('');
     setError(null);
 
