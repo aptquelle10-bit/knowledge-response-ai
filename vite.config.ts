@@ -9,6 +9,13 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    host: true,
+    port: 5175,
+    proxy: {
+      '/api': 'http://localhost:5173',
+    },
+  },
   optimizeDeps: {
     exclude: ['lucide-react'],
   },

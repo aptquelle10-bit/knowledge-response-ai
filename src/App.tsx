@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import type { KnowledgePackage } from '@/lib/types';
 import { fetchPackages } from '@/lib/services';
 import { Sidebar } from '@/components/Sidebar';
@@ -33,21 +32,6 @@ export default function App() {
 
   useEffect(() => {
     loadPackages();
-  }, [loadPackages]);
-
-  useEffect(() => {
-    const channel = supabase
-      .channel('packages-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'knowledge_packages' },
-        () => loadPackages()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [loadPackages]);
 
   return (

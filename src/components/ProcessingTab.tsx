@@ -106,35 +106,45 @@ export function ProcessingTab({ job, pkg, sources, processing, onProcess }: Proc
       </div>
 
       {/* Processing log */}
-      {job && job.log && job.log.length > 0 && (
-        <div className="card p-5">
-          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
-            Processing Log
-          </h4>
-          <div className="space-y-1.5 max-h-96 overflow-y-auto font-mono text-xs">
-            {job.log.map((entry, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <span className="text-slate-600 shrink-0">
-                  {new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
-                <span className={`shrink-0 ${
-                  entry.type === 'success' ? 'text-emerald-500' :
-                  entry.type === 'error' ? 'text-red-500' : 'text-cyan-500'
-                }`}>
-                  {entry.type === 'success' ? '✓' : entry.type === 'error' ? '✗' : '›'}
-                </span>
-                <span className="text-slate-600 shrink-0">[{entry.stage}]</span>
-                <span className={`${
-                  entry.type === 'success' ? 'text-slate-300' :
-                  entry.type === 'error' ? 'text-red-400' : 'text-slate-400'
-                }`}>
-                  {entry.message}
-                </span>
-              </div>
-            ))}
+      {(() => {
+        const logEntries = Array.isArray(job?.log)
+          ? job.log
+          : typeof (job?.log as any) === 'string' && (job?.log as any).trim()
+          ? [{ time: job?.updated_at || new Date().toISOString(), stage: job?.stage || 'Log', message: String(job?.log), type: 'info' as const }]
+          : [];
+
+        if (logEntries.length === 0) return null;
+
+        return (
+          <div className="card p-5">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+              Processing Log
+            </h4>
+            <div className="space-y-1.5 max-h-96 overflow-y-auto font-mono text-xs">
+              {logEntries.map((entry, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <span className="text-slate-600 shrink-0">
+                    {new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                  <span className={`shrink-0 ${
+                    entry.type === 'success' ? 'text-emerald-500' :
+                    entry.type === 'error' ? 'text-red-500' : 'text-cyan-500'
+                  }`}>
+                    {entry.type === 'success' ? '✓' : entry.type === 'error' ? '✗' : '›'}
+                  </span>
+                  <span className="text-slate-600 shrink-0">[{entry.stage}]</span>
+                  <span className={`${
+                    entry.type === 'success' ? 'text-slate-300' :
+                    entry.type === 'error' ? 'text-red-400' : 'text-slate-400'
+                  }`}>
+                    {entry.message}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Architecture info */}
       <div className="card p-5">

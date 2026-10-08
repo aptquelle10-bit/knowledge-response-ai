@@ -181,7 +181,7 @@ const TYPE_TEMPLATES: Record<string, {
       { id: 'fact-005', category: 'product', value: 'Bot Builder Suite — Telegram bot framework' },
       { id: 'fact-006', category: 'team', value: 'Cross-functional team with expertise in AI and web technologies' },
     ],
-    entities: () => ['Knowledge Maker', 'Chat Widget', 'Bot Builder', 'AI Gateway', 'Orama', 'Supabase', 'Telegram'],
+    entities: () => ['Knowledge Maker', 'Chat Widget', 'Bot Builder', 'AI Gateway', 'Orama', 'Local Files', 'Telegram'],
     qas: () => [
       { question: 'What does the company do?', answer: 'The company builds platforms that transform any type of content into AI-ready knowledge packages, which can then power chat widgets, Telegram bots, and other AI assistants.' },
       { question: 'What products are available?', answer: 'The product suite includes Omni Knowledge Maker (content processing), Chat Widget Buddy (embeddable assistants), and Bot Builder Suite (Telegram bot framework).' },

@@ -58,9 +58,10 @@ export function PackageDetail({ packageId, onBack, onDeleted }: PackageDetailPro
     setProcessing(true);
     setTab('processing');
     try {
-      await runProcessingPipeline(packageId, pkg, sources, (stage, progress, log) => {
-        setJob((prev) => prev ? { ...prev, stage, progress, log } : prev);
+      const finishedJob = await runProcessingPipeline(packageId, pkg, sources, (updatedJob) => {
+        setJob(updatedJob);
       });
+      setJob(finishedJob);
       await loadAll();
     } catch (e) {
       console.error('Processing failed:', e);

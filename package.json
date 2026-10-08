@@ -1,6 +1,6 @@
 {
   "name": "knowledge-response-ai",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Transform documents and content into AI-ready knowledge packages for chat widgets and websites",
   "type": "module",
   "main": "./src/lib/index.ts",
@@ -33,6 +33,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^26.6.4",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.1.2",

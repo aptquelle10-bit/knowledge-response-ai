@@ -47,7 +47,7 @@ export function KnowledgeTab({ packageId, pkg, assets, onAssetsChanged }: Knowle
 
   // Sync to Website / Folder State
   const [targetProject, setTargetProject] = useState(pkg.slug || 'apzurquelle');
-  const [gatewayUrl, setGatewayUrl] = useState('http://localhost:5174');
+  const [gatewayUrl, setGatewayUrl] = useState('http://localhost:5173');
   const [syncStatus, setSyncStatus] = useState<{ state: 'idle' | 'loading' | 'success' | 'error'; message: string }>({
     state: 'idle',
     message: '',
@@ -340,7 +340,7 @@ function AssetContent({ asset, meta }: { asset: KnowledgeAsset; meta: AssetMeta 
   }
 
   if (meta.type === 'facts') {
-    const facts = data as { id: string; category: string; value: string }[];
+    const facts = Array.isArray(data) ? (data as { id: string; category: string; value: string }[]) : [];
     return (
       <div className="space-y-2 max-h-[600px] overflow-y-auto">
         {facts.map((fact) => (
@@ -357,7 +357,7 @@ function AssetContent({ asset, meta }: { asset: KnowledgeAsset; meta: AssetMeta 
   }
 
   if (meta.type === 'entities') {
-    const entities = data as string[];
+    const entities = Array.isArray(data) ? (data as string[]) : [];
     return (
       <div className="flex flex-wrap gap-2 max-h-[600px] overflow-y-auto p-1">
         {entities.map((entity, i) => (
@@ -373,7 +373,7 @@ function AssetContent({ asset, meta }: { asset: KnowledgeAsset; meta: AssetMeta 
   }
 
   if (meta.type === 'canned-qa') {
-    const qas = data as { question: string; answer: string }[];
+    const qas = Array.isArray(data) ? (data as { question: string; answer: string }[]) : [];
     return (
       <div className="space-y-3 max-h-[600px] overflow-y-auto">
         {qas.map((qa, i) => (
@@ -390,7 +390,7 @@ function AssetContent({ asset, meta }: { asset: KnowledgeAsset; meta: AssetMeta 
   }
 
   if (meta.type === 'corrections') {
-    const corrections = data as { priority: string; rule: string }[];
+    const corrections = Array.isArray(data) ? (data as { priority: string; rule: string }[]) : [];
     const priorityColors: Record<string, string> = {
       critical: '#ef4444',
       warning: '#f59e0b',
@@ -417,7 +417,7 @@ function AssetContent({ asset, meta }: { asset: KnowledgeAsset; meta: AssetMeta 
   }
 
   if (meta.type === 'glossary') {
-    const items = data as { term: string; description: string }[];
+    const items = Array.isArray(data) ? (data as { term: string; description: string }[]) : [];
     return (
       <div className="space-y-2 max-h-[600px] overflow-y-auto">
         {items.map((item, i) => (
@@ -431,14 +431,14 @@ function AssetContent({ asset, meta }: { asset: KnowledgeAsset; meta: AssetMeta 
   }
 
   if (meta.type === 'intents') {
-    const intents = data as { intent: string; patterns: string[] }[];
+    const intents = Array.isArray(data) ? (data as { intent: string; patterns: string[] }[]) : [];
     return (
       <div className="space-y-2 max-h-[600px] overflow-y-auto">
         {intents.map((intent, i) => (
           <div key={i} className="p-3 rounded-lg bg-[#0a0e1a] border border-[#1e293b]">
             <div className="text-sm font-semibold text-teal-400">{intent.intent}</div>
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {intent.patterns.map((p, j) => (
+              {(Array.isArray(intent.patterns) ? intent.patterns : []).map((p, j) => (
                 <span key={j} className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800/60 text-slate-400">
                   "{p}"
                 </span>
@@ -451,17 +451,17 @@ function AssetContent({ asset, meta }: { asset: KnowledgeAsset; meta: AssetMeta 
   }
 
   if (meta.type === 'vector-index') {
-    const index = data as { chunks: { id: string; text: string; embedding: number[] }[] };
+    const chunks = Array.isArray((data as any)?.chunks) ? (data as any).chunks : [];
     return (
       <div className="space-y-2 max-h-[600px] overflow-y-auto">
         <div className="text-xs text-slate-500 mb-2">
-          {index.chunks.length} chunks indexed from master.md via Orama
+          {chunks.length} chunks indexed from master.md via Orama
         </div>
-        {index.chunks.map((chunk) => (
+        {chunks.map((chunk: any) => (
           <div key={chunk.id} className="p-3 rounded-lg bg-[#0a0e1a] border border-[#1e293b]">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] font-mono text-cyan-400">{chunk.id}</span>
-              <span className="text-[10px] text-slate-600">{chunk.embedding.length}D vector</span>
+              <span className="text-[10px] text-slate-600">{chunk.embedding?.length || 0}D vector</span>
             </div>
             <p className="text-xs text-slate-500 line-clamp-2 font-mono">{chunk.text}</p>
           </div>

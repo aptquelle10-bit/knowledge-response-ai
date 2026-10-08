@@ -1,9 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, Trash2, Check, Loader2, FileCheck, Image, FileCode, Mail, Archive, RefreshCw } from 'lucide-react';
 import type { KnowledgeSource } from '@/lib/types';
-import { addSourceByName, deleteSource, getFileExtension } from '@/lib/services';
-import { generateNormalizedContent, normalizeFilename } from '@/lib/engine';
-import { supabase } from '@/lib/supabase';
+import { addSourceByName, deleteSource } from '@/lib/services';
+import { generateNormalizedContent, normalizeFilename, getFileExtension } from '@/lib/engine';
 
 interface SourcesTabProps {
   packageId: string;
@@ -61,26 +60,6 @@ export function SourcesTab({ packageId, sources, onSourcesChanged, pkgStatus, on
     try {
       for (const name of selectedDemo) {
         await addSourceByName(packageId, name, Math.floor(Math.random() * 500000) + 50000);
-        // Simulate immediate normalization for demo files
-        const { data } = await supabase
-          .from('knowledge_sources')
-          .select('id')
-          .eq('package_id', packageId)
-          .eq('filename', name)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (data) {
-          await supabase
-            .from('knowledge_sources')
-            .update({
-              normalized_name: normalizeFilename(name),
-              normalized_content: generateNormalizedContent(name),
-              status: 'normalized',
-            })
-            .eq('id', data.id);
-        }
       }
       setSelectedDemo([]);
       onSourcesChanged();
@@ -90,7 +69,7 @@ export function SourcesTab({ packageId, sources, onSourcesChanged, pkgStatus, on
   };
 
   const handleDelete = async (id: string) => {
-    await deleteSource(id);
+    await deleteSource(id, packageId);
     onSourcesChanged();
   };
 
